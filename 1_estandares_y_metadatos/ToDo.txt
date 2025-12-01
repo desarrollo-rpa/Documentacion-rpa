@@ -1,0 +1,10 @@
+Propuestos
+
+1.1.M-01_Plantilla_Metadatos_Recurso_RPA.csv
+Estructura para documentar cada recurso.
+
+1.1.T-01_Plantilla_Documentacion_Flujo_RPA.docx
+Plantilla para describir cada flujo del robot.
+
+1.1.T-02_Plantilla_Checklist_Despliegue_RPA.xlsx
+Lista para validar antes de pasar robots a producción.
