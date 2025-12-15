@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Cargando Contenido...</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50; /* Azul oscuro */
+            --secondary-color: #008080; /* Tono RPA (verde/azul) */
+            --background-color: #89a2a7; /* Fondo gris claro que elegiste */
+            --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            --transition-speed: 0.3s;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color); 
+            color: var(--primary-color);
+            line-height: 1.6;
+            padding: 0; 
+            margin: 0;
+            text-align: center;
+        }
+
+        .header-container {
+            background-color: var(--primary-color);
+            color: white; 
+            padding: 40px 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            width: 100%; 
+            margin-bottom: 30px; 
+        }
+
+        .header-container h1 {
+            color: white;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-weight: 700;
+            font-size: 2em;
+        }
+        
+        .header-container p {
+            color: #bdc3c7; 
+            font-size: 1.1em;
+            margin-bottom: 0;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 25px;
+            margin: 0 auto;
+            max-width: 1200px;
+            padding: 20px; 
+        }
+
+        /* Estilos específicos para la lista de contenido */
+        .content-list {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: left;
+            padding: 30px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: var(--box-shadow);
+        }
+        .content-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .content-item:last-child {
+            border-bottom: none;
+        }
+        .content-item a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            margin-left: 10px;
+            word-break: break-all;
+        }
+        .content-item a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+        .content-icon {
+            font-size: 1.2em;
+            color: var(--secondary-color);
+        }
+
+        /* Estilos de la ruta de navegación (Breadcrumb) */
+        .breadcrumb {
+            text-align: left;
+            max-width: 800px;
+            margin: 0 auto 15px auto;
+            padding: 0 10px;
+            font-size: 0.9em;
+            color: #555;
+        }
+        .breadcrumb a {
+            color: #555;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            color: var(--secondary-color);
+            text-decoration: underline;
+        }
+
+        /* Estilo para el botón de Volver */
+        .back-button {
+            display: inline-block;
+            padding: 8px 15px;
+            background-color: #f0f0f0;
+            color: var(--primary-color) !important;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: background-color 0.2s;
+            font-size: 0.9em;
+            margin-bottom: 20px; /* Separación del botón con la lista de contenido */
+        }
+
+        .back-button:hover {
+            background-color: #e0e0e0;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-container">
+        <h1 id="titulo-carpeta">Cargando Contenido Dinámico...</h1> 
+        <p>Mostrando contenido actualizado en tiempo real desde GitHub.</p>
+    </div>
+
+    <div class="breadcrumb" id="breadcrumb-links">
+        </div>
+
+    <div class="container">
+        <div id="back-button-container" style="width: 100%; max-width: 800px; margin: 0 auto; text-align: left;">
+            </div>
+
+        <div class="content-list">
+            <h2>Contenido</h2>
+            <div id="lista-contenido">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === 1. CONFIGURACIÓN: VALORES FINALES DE TU REPOSITORIO ===
+        const GITHUB_USERNAME = "desarrollo-rpa"; 
+        const REPOSITORY_NAME = "Documentacion-rpa"; 
+        const REPOSITORY_SLUG = "Documentacion-rpa"; // Usamos el nombre con guiones
+        const BRANCH_NAME = "main";
+        
+        const GITHUB_API_URL = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPOSITORY_SLUG}/contents`;
+        const GITHUB_BASE_URL = `https://github.com/${GITHUB_USERNAME}/${REPOSITORY_SLUG}/tree/${BRANCH_NAME}`;
+        // =================================================
+
+        // Función auxiliar para obtener la ruta del padre (para el botón Volver)
+        function getParentPath(path) {
+            const parts = path.split('/');
+            // Si solo hay una parte (carpeta principal), el padre es el índice
+            if (parts.length <= 1) {
+                return 'index.html';
+            }
+            // Si hay más, eliminamos la última parte para obtener la ruta del padre
+            parts.pop();
+            return `contenido.html?folder=${parts.join('/')}`;
+        }
+
+        // Función para generar la ruta de navegación interactiva
+        function generarBreadcrumb(path) {
+            const breadcrumbElement = document.getElementById('breadcrumb-links');
+            const parts = path.split('/');
+            let currentPath = '';
+            let html = `<a href="index.html">Índice Principal</a> &gt; `;
+
+            parts.forEach((part, index) => {
+                if (index === 0) {
+                    currentPath = part;
+                } else {
+                    currentPath += '/' + part;
+                }
+                
+                if (index < parts.length - 1) {
+                    // Crea un enlace navegable para las rutas intermedias
+                    html += `<a href="contenido.html?folder=${currentPath}">${part}</a> &gt; `;
+                } else {
+                    // El último elemento es el actual
+                    html += `<span>${part}</span>`;
+                }
+            });
+            breadcrumbElement.innerHTML = html;
+        }
+
+        function cargarContenidoDinamico() {
+            const params = new URLSearchParams(window.location.search);
+            const folderPath = params.get('folder'); // Ruta completa (ej: 0_doc/subcarpeta)
+            
+            const tituloElement = document.getElementById('titulo-carpeta');
+            const listaElement = document.getElementById('lista-contenido');
+            const pageTitleElement = document.getElementById('page-title');
+            const backButtonContainer = document.getElementById('back-button-container');
+
+            if (!folderPath) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            // --- Actualizar la Interfaz ---
+            const displayTitle = folderPath.split('/').pop();
+            tituloElement.textContent = `${displayTitle}`;
+            pageTitleElement.textContent = `Contenido: ${folderPath}`;
+            listaElement.innerHTML = '<p>Cargando contenido dinámico desde GitHub...</p>';
+            
+            generarBreadcrumb(folderPath);
+
+            // 3. Realizar la solicitud a la API de GitHub
+            fetch(`${GITHUB_API_URL}/${folderPath}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error ${response.status}: La ruta "${folderPath}" no es válida o no existe.`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    let htmlContent = '';
+                    
+                    // Ordenar: Directorios primero, luego archivos
+                    data.sort((a, b) => {
+                        if (a.type === 'dir' && b.type !== 'dir') return -1;
+                        if (a.type !== 'dir' && b.type === 'dir') return 1;
+                        return a.name.localeCompare(b.name);
+                    });
+                    
+                    data.forEach(item => {
+                        const icon = item.type === 'dir' ? '📁' : '📄';
+                        
+                        let targetLink;
+                        
+                        if (item.type === 'dir') {
+                            // SUBCARPETA: Enlaza de vuelta a contenido.html (navegación interna)
+                            const newFolderPath = `${folderPath}/${item.name}`;
+                            targetLink = `contenido.html?folder=${newFolderPath}`;
+                        } else {
+                            // ARCHIVO: Enlace directo a la URL de descarga/vista de GitHub (misma pestaña)
+                            // Usamos item.download_url para archivos descargables, o el enlace de la vista web.
+                            targetLink = item.download_url || `${GITHUB_BASE_URL}/${folderPath}/${item.name}`;
+                        }
+                        
+                        // NOTA CLAVE: Eliminamos target="_blank" para que se abra en la misma pestaña
+                        htmlContent += `
+                            <div class="content-item">
+                                <span class="content-icon">${icon}</span> <a href="${targetLink}">${item.name}</a>
+                            </div>
+                        `;
+                    });
+
+                    listaElement.innerHTML = htmlContent;
+                })
+                .catch(error => {
+                    console.error('Error al cargar datos de GitHub:', error);
+                    listaElement.innerHTML = `<p style="color: red;">¡Error de Conexión! ${error.message}</p>`;
+                });
+        }
+
+        window.onload = cargarContenidoDinamico;
+    </script>
+
+</body>
+</html>
